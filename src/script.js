@@ -1,122 +1,63 @@
-class MixOrMatch {
-    constructor(totalTime, cards) {
-        this.cardsArray = cards;
-        this.totalTime = totalTime;
-        this.timeRemaining = totalTime;
-        this.timer = document.getElementById('time-remaining')
-        this.ticker = document.getElementById('flips');
-    }
+const cards = document.querySelectorAll('.card');
 
-    startGame() {
-        this.totalClicks = 0;
-        this.timeRemaining = this.totalTime;
-        this.cardToCheck = null;
-        this.matchedCards = [];
-        this.busy = true;
-        setTimeout(() => {
-            this.shuffleCards(this.cardsArray);
-            this.countdown = this.startCountdown();
-            this.busy = false;
-        }, 1000)
-        this.hideCards();
-        this.timer.innerText = this.timeRemaining;
-        this.ticker.innerText = this.totalClicks;
-    }
-    startCountdown() {
-        return setInterval(() => {
-            this.timeRemaining--;
-            this.timer.innerText = this.timeRemaining;
-            if(this.timeRemaining === 0)
-                this.gameOver();
-        }, 2000);
-    }
-    gameOver() {
-        clearInterval(this.countdown);
-        document.getElementById('game-over-text').classList.add('visible');
-    }
-    victory() {
-        clearInterval(this.countdown);
-        document.getElementById('victory-text').classList.add('visible');
-    }
-    hideCards() {
-        this.cardsArray.forEach(card => {
-            card.classList.remove('visible');
-            card.classList.remove('matched');
-        });
-    }
-    flipCard(card) {
-        if(this.canFlipCard(card)) {
-            this.totalClicks++;
-            this.ticker.innerText = this.totalClicks;
-            card.classList.add('visible');
+let hasFlippedCard = false;
+let lockBoard = false;
+let firstCard, secondCard;
 
-            if(this.cardToCheck) {
-                this.checkForCardMatch(card);
-            } else {
-                this.cardToCheck = card;
-            }
-        }
-    }
-    checkForCardMatch(card) {
-        if(this.getCardType(card) === this.getCardType(this.cardToCheck))
-            this.cardMatch(card, this.cardToCheck);
-        else 
-            this.cardMismatch(card, this.cardToCheck);
+function flipCard() {
+  if (lockBoard) return;
+  if (this === firstCard) return;
 
-        this.cardToCheck = null;
-    }
-    cardMatch(card1, card2) {
-        this.matchedCards.push(card1);
-        this.matchedCards.push(card2);
-        card1.classList.add('matched');
-        card2.classList.add('matched');
-        if(this.matchedCards.length === this.cardsArray.length)
-            this.victory();
-    }
-    cardMismatch(card1, card2) {
-        this.busy = true;
-        setTimeout(() => {
-            card1.classList.remove('visible');
-            card2.classList.remove('visible');
-            this.busy = false;
-        }, 1000);
-    }
-    shuffleCards(cardsArray) { // Fisher-Yates Shuffle Algorithm.
-        for (let i = cardsArray.length - 1; i > 0; i--) {
-            let randIndex = Math.floor(Math.random() * (i + 1));
-            cardsArray[randIndex].style.order = i;
-            cardsArray[i].style.order = randIndex;
-        }
-    }
-    getCardType(card) {
-        return card.getElementsByClassName('card-value')[0].src;
-    }
-    canFlipCard(card) {
-        return !this.busy && !this.matchedCards.includes(card) && card !== this.cardToCheck;
-    }
+  this.classList.add('flip');
+
+  if (!hasFlippedCard) {
+    // first click
+    hasFlippedCard = true;
+    firstCard = this;
+
+    return;
+  }
+
+  // second click
+  secondCard = this;
+
+  checkForMatch();
 }
 
-if (document.readyState == 'loading') {
-    document.addEventListener('DOMContentLoaded', ready);
-} else {
-    ready();
+function checkForMatch() {
+  let isMatch = firstCard.dataset.framework === secondCard.dataset.framework;
+
+  isMatch ? disableCards() : unflipCards();
 }
 
-function ready() {
-    let overlays = Array.from(document.getElementsByClassName('overlay-text'));
-    let cards = Array.from(document.getElementsByClassName('card'));
-    let game = new MixOrMatch(100, cards);
+function disableCards() {
+  firstCard.removeEventListener('click', flipCard);
+  secondCard.removeEventListener('click', flipCard);
 
-    overlays.forEach(overlay => {
-        overlay.addEventListener('click', () => {
-            overlay.classList.remove('visible');
-            game.startGame();
-        });
-    });
-
-    cards.forEach(card => {
-        card.addEventListener('click', () => {
-            game.flipCard(card);
-        });
-    });
+  resetBoard();
 }
+
+function unflipCards() {
+  lockBoard = true;
+
+  setTimeout(() => {
+    firstCard.classList.remove('flip');
+    secondCard.classList.remove('flip');
+
+    resetBoard();
+  }, 1500);
+}
+
+function resetBoard() {
+  [hasFlippedCard, lockBoard] = [false, false];
+  [firstCard, secondCard] = [null, null];
+}
+
+(function shuffle() {
+  cards.forEach(card => {
+    let randomPos = Math.floor(Math.random() * 12);
+    card.style.order = randomPos;
+  });
+})();
+
+cards.forEach(card => card.addEventListener('click', flipCard));
