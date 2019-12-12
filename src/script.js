@@ -45,7 +45,7 @@ function unflipCards() {
     secondCard.classList.remove('flip');
 
     resetBoard();
-  }, 1500);
+  }, 900);
 }
 
 function resetBoard() {
@@ -61,3 +61,5 @@ function resetBoard() {
 })();
 
 cards.forEach(card => card.addEventListener('click', flipCard));
+
+document.getElementsByClassName("fresh").addEventListener("click", shuffle); 
